@@ -1,21 +1,30 @@
+name: Tailscale Ubuntu Test
+
+on:
+  workflow_dispatch:
+
 jobs:
-  tailscale-test:
+  test-tailscale:
     runs-on: ubuntu-latest
+
     steps:
       - name: Install Tailscale
         run: |
-          curl -fsSL https://tailscale.com/install.sh | sh
+          curl -fsSL https://pkgs.tailscale.com/stable/tailscale.tgz | tar -xz
+          sudo install tailscale tailscaled /usr/local/bin
 
-      - name: Start tailscaled
+      - name: Start tailscaled in userspace mode
         run: |
           nohup sudo tailscaled --tun=userspace-networking \
             --socks5-server=localhost:1055 \
             --outbound-http-proxy-listen=localhost:1056 > tailscaled.log 2>&1 &
-          sleep 10
 
-      - name: Connect to Tailscale
+      - name: Authenticate with Tailscale
         run: |
-          sudo tailscale up --authkey ${{ secrets.TS_AUTHKEY }} \
-            --hostname gha-android \
-            --ssh \
-            --reset
+          sleep 5
+          sudo tailscale up --authkey ${{ secrets.TS_AUTHKEY }} --ssh --reset
+          
+      - name: Check Tailscale IP
+        run: |
+          sleep 3
+          tailscale ip -4

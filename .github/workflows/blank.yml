@@ -1,0 +1,21 @@
+jobs:
+  tailscale-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install Tailscale
+        run: |
+          curl -fsSL https://tailscale.com/install.sh | sh
+
+      - name: Start tailscaled
+        run: |
+          nohup sudo tailscaled --tun=userspace-networking \
+            --socks5-server=localhost:1055 \
+            --outbound-http-proxy-listen=localhost:1056 > tailscaled.log 2>&1 &
+          sleep 10
+
+      - name: Connect to Tailscale
+        run: |
+          sudo tailscale up --authkey ${{ secrets.TS_AUTHKEY }} \
+            --hostname gha-android \
+            --ssh \
+            --reset

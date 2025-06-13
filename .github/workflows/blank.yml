@@ -8,10 +8,9 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Install Tailscale
+      - name: Install Tailscale (correct way)
         run: |
-          curl -fsSL https://pkgs.tailscale.com/stable/tailscale.tgz | tar -xz
-          sudo install tailscale tailscaled /usr/local/bin
+          curl -fsSL https://tailscale.com/install.sh | sh
 
       - name: Start tailscaled in userspace mode
         run: |
@@ -19,12 +18,11 @@ jobs:
             --socks5-server=localhost:1055 \
             --outbound-http-proxy-listen=localhost:1056 > tailscaled.log 2>&1 &
 
-      - name: Authenticate with Tailscale
+      - name: Connect to Tailscale
         run: |
           sleep 5
           sudo tailscale up --authkey ${{ secrets.TS_AUTHKEY }} --ssh --reset
-          
-      - name: Check Tailscale IP
+
+      - name: Get Tailscale IP
         run: |
-          sleep 3
           tailscale ip -4

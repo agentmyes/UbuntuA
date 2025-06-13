@@ -1,4 +1,4 @@
-name: Tailscale Ubuntu Test
+name: Tailscale + Waydroid
 
 on:
   workflow_dispatch:
@@ -24,5 +24,36 @@ jobs:
           sudo tailscale up --authkey ${{ secrets.TS_AUTHKEY }} --ssh --reset
 
       - name: Get Tailscale IP
+        run: tailscale ip -4
+
+      - name: Install Waydroid
         run: |
-          tailscale ip -4
+          sudo apt update
+          sudo apt install -y curl ca-certificates gnupg \
+            lxc lxd python3-pip android-tools-adb \
+            x11-utils weston xwayland dbus-x11
+
+          curl https://repo.waydro.id | sudo bash
+          sudo apt install -y waydroid
+          sudo waydroid init -s GAPPS
+
+      - name: Start Waydroid container
+        run: |
+          sudo systemctl start waydroid-container
+          sleep 10
+          sudo waydroid container start
+          sleep 5
+          sudo waydroid session start &
+          sleep 15
+
+      - name: Enable ADB in Waydroid
+        run: |
+          sudo waydroid prop set persist.adb.tcp.port 5555
+          sleep 5
+          sudo waydroid session start &
+          sleep 10
+          adb connect 127.0.0.1:5555 || true
+          adb devices || true
+
+      - name: Keep alive
+        run: sleep 7200
